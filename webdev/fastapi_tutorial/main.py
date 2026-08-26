@@ -1,9 +1,9 @@
 import random
 from enum import Enum
-from typing import Annotated
+from typing import Annotated, Literal
 
-from fastapi import FastAPI, Query
-from pydantic import AfterValidator, BaseModel
+from fastapi import Body, FastAPI, Path, Query
+from pydantic import AfterValidator, BaseModel, Field, HttpUrl
 
 app = FastAPI()
 
@@ -18,11 +18,37 @@ class ModelName(str, Enum):
     resnet = "resnet"
     lenet = "lenet"
 
+class Image(BaseModel):
+    url: HttpUrl
+    name: str
+
 class Item(BaseModel):
+    name: str
+    description: str | None = Field(
+        default=None, title="The description of the item", max_length=300
+    )
+    price: float = Field(gt=0, description="The price must be greater than zero")
+    tax: float | None = None
+    tags: set[str] = set()
+    images: list[Image] | None = None
+
+class Offer(BaseModel):
     name: str
     description: str | None = None
     price: float
-    tax: float | None = None
+    items: list[Item]
+
+class User(BaseModel):
+    username: str
+    full_name: str | None = None
+
+class FilterParams(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    limit: int = Field(100, gt=0, le=100)
+    offset: int = Field(0, ge=0)
+    order_by: Literal["created_at", "updated_at"] = "created_at"
+    tags: list[str] = []
 
 def check_valid_id(id: str):
     if not id.startswith(("isbn-", "imdb-")):
@@ -34,15 +60,17 @@ def read_root():
     return {"Hello": "World"}
 
 @app.get("/items/{item_id}")
-async def read_item(item_id: str, q: str | None = None, short: bool = False):
-    item = {"item_id": item_id}
+async def read_item(
+    item_id: Annotated[int, Path(title="The ID of the item to get", ge=0, le=1000)],
+    q: Annotated[str | None, Query(alias="item-query")]=None,
+    size: Annotated[float, Query(gt=0, lt=10.5)]=None,
+):
+    results = {"item_id": item_id}
     if q:
-        item.update({"q": q})
-    if not short:
-        item.update(
-            {"description": "This is an amazing item that has a long description"}
-        )
-    return item
+        results.update({"q": q})
+    if size:
+        results.update({"size": size})
+    return results
 
 @app.get("/users/{user_id}/items/{item_id}")
 async def read_user_item(
@@ -117,6 +145,10 @@ async def read_things(
         id, item = random.choice(list(data.items()))
     return {"id": id, "name": item}
 
+@app.get("/entities/")
+async def read_entities(filter_query: Annotated[FilterParams, Query()]):
+    return filter_query
+
 @app.post("/items/")
 async def create_item(item: Item):
     item_dict = item.model_dump()
@@ -125,9 +157,32 @@ async def create_item(item: Item):
         item_dict.update({"price_with_tax": price_with_tax})
     return item_dict
 
+@app.post("/offers/")
+async def create_offer(offer: Offer):
+    return offer
+
+@app.post("/images/multiple/")
+async def create_multiple_images(images: list[Image]):
+    return images
+
+@app.post("/index-weights/")
+async def create_index_weights(weights: dict[int, float]):
+    return weights
+
 @app.put("/items/{item_id}")
-async def update_item(item_id: int, item: Item, q: str | None = None):
-    result = {"item_id": item_id, **item.model_dump()}
+async def update_item(
+    item_id: Annotated[int, Path(title="The ID of the item to get", ge=0, le=1000)],
+    item: Item,
+    user: User,
+    importance: Annotated[int, Body(gt=0)],
+    q: str | None = None,
+):
+    results = {"item_id": item_id, "item": item, "user": user, "importance": importance}
     if q:
-        result.update({"q": q})
-    return result
+        results.update({"q": q})
+    return results
+
+@app.put("/things/{item_id}")
+async def update_thing(item_id: int, item: Annotated[Item, Body(embed=True)]):
+    results = {"item_id": item_id, "item": item}
+    return results
