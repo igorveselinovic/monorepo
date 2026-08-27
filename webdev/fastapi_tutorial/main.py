@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import Body, FastAPI, Path, Query
+from fastapi import Body, Cookie, FastAPI, Header, Path, Query
 from pydantic import AfterValidator, BaseModel, Field, HttpUrl
 
 app = FastAPI()
@@ -77,13 +77,25 @@ async def read_item(
     item_id: Annotated[int, Path(title="The ID of the item to get", ge=0, le=1000)],
     q: Annotated[str | None, Query(alias="item-query")]=None,
     size: Annotated[float | None, Query(gt=0, lt=10.5)]=None,
+    ads_id: Annotated[str | None, Cookie()] = None,
+    user_agent: Annotated[str | None, Header()] = None,
 ):
-    results = {"item_id": item_id}
+    results = {"item_id": item_id, "ads_id": ads_id, "user_agent": user_agent}
     if q:
         results.update({"q": q})
     if size:
         results.update({"size": size})
     return results
+
+@app.get("/underscore_header_items/")
+async def read_underscore_header_items(
+    strange_header: Annotated[str | None, Header(convert_underscores=False)] = None,
+):
+    return {"strange_header": strange_header}
+
+@app.get("/header_list_items/")
+async def read_header_list_items(x_token: Annotated[list[str] | None, Header()] = None):
+    return {"X-Token values": x_token}
 
 @app.get("/users/{user_id}/items/{item_id}")
 async def read_user_item(
@@ -282,3 +294,37 @@ async def read_data_types_thing(
         "start_process": start_process,
         "duration": duration,
     }
+
+
+# Cookie Parameter Models
+
+class Cookies(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    session_id: str
+    fatebook_tracker: str | None = None
+    googall_tracker: str | None = None
+
+@app.get("/cookies_items/")
+async def read_cookies_items(cookies: Annotated[Cookies, Cookie()]):
+    return cookies
+
+
+# Header Parameter Models
+
+class CommonHeaders(BaseModel):
+    host: str
+    save_data: bool
+    if_modified_since: str | None = None
+    traceparent: str | None = None
+    x_tag: list[str] = []
+
+@app.get("/headers_items/")
+async def read_headers_items(headers: Annotated[CommonHeaders, Header()]):
+    return headers
+
+@app.get("/underscore_headers_items/")
+async def read_underscore_headers_items(
+    headers: Annotated[CommonHeaders, Header(convert_underscores=False)],
+):
+    return headers
