@@ -1,6 +1,8 @@
 import random
+from datetime import datetime, time, timedelta
 from enum import Enum
 from typing import Annotated, Literal
+from uuid import UUID
 
 from fastapi import Body, FastAPI, Path, Query
 from pydantic import AfterValidator, BaseModel, Field, HttpUrl
@@ -22,13 +24,24 @@ class Image(BaseModel):
     url: HttpUrl
     name: str
 
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "url": "https://www.example.com/",
+                    "name": "Look at this graph",
+                }
+            ]
+        }
+    }
+
 class Item(BaseModel):
-    name: str
-    description: str | None = Field(
-        default=None, title="The description of the item", max_length=300
-    )
-    price: float = Field(gt=0, description="The price must be greater than zero")
-    tax: float | None = None
+    name: Annotated[str, Field(examples=["Foo"])]
+    description: Annotated[str | None, Field(
+        default=None, title="The description of the item", max_length=300, examples=["A very nice item"]
+    )]
+    price: Annotated[float, Field(gt=0, description="The price must be greater than zero", examples=[35.4])]
+    tax: Annotated[float | None, Field(default=None, examples=[3.2])]
     tags: set[str] = set()
     images: list[Image] | None = None
 
@@ -45,8 +58,8 @@ class User(BaseModel):
 class FilterParams(BaseModel):
     model_config = {"extra": "forbid"}
 
-    limit: int = Field(100, gt=0, le=100)
-    offset: int = Field(0, ge=0)
+    limit: Annotated[int, Field(100, gt=0, le=100)]
+    offset: Annotated[int, Field(0, ge=0)]
     order_by: Literal["created_at", "updated_at"] = "created_at"
     tags: list[str] = []
 
@@ -63,7 +76,7 @@ def read_root():
 async def read_item(
     item_id: Annotated[int, Path(title="The ID of the item to get", ge=0, le=1000)],
     q: Annotated[str | None, Query(alias="item-query")]=None,
-    size: Annotated[float, Query(gt=0, lt=10.5)]=None,
+    size: Annotated[float | None, Query(gt=0, lt=10.5)]=None,
 ):
     results = {"item_id": item_id}
     if q:
@@ -172,7 +185,27 @@ async def create_index_weights(weights: dict[int, float]):
 @app.put("/items/{item_id}")
 async def update_item(
     item_id: Annotated[int, Path(title="The ID of the item to get", ge=0, le=1000)],
-    item: Item,
+    item: Annotated[
+        Item,
+        Body(
+            examples=[
+                {
+                    "name": "Bar",
+                    "description": "A very very nice Item",
+                    "price": 100.1,
+                    "tax": 1.1,
+                },
+                {
+                    "name": "Bar",
+                    "price": "35.4",
+                },
+                {
+                    "name": "Baz",
+                    "price": "thirty five point four",
+                },
+            ]
+        ),
+    ],
     user: User,
     importance: Annotated[int, Body(gt=0)],
     q: str | None = None,
@@ -183,6 +216,69 @@ async def update_item(
     return results
 
 @app.put("/things/{item_id}")
-async def update_thing(item_id: int, item: Annotated[Item, Body(embed=True)]):
+async def update_thing(
+    item_id: int,
+    item: Annotated[Item, Body(embed=True)]
+):
     results = {"item_id": item_id, "item": item}
     return results
+
+@app.put("/openapi_things/{item_id}")
+async def update_openapi_things(
+    *,
+    item_id: int,
+    item: Annotated[
+        Item,
+        Body(
+            openapi_examples={
+                "normal": {
+                    "summary": "A normal example",
+                    "description": "A **normal** item works correctly.",
+                    "value": {
+                        "name": "Foo",
+                        "description": "A very nice Item",
+                        "price": 35.4,
+                        "tax": 3.2,
+                    },
+                },
+                "converted": {
+                    "summary": "An example with converted data",
+                    "description": "FastAPI can convert price `strings` to actual `numbers` automatically",
+                    "value": {
+                        "name": "Bar",
+                        "price": "35.4",
+                    },
+                },
+                "invalid": {
+                    "summary": "Invalid data is rejected with an error",
+                    "value": {
+                        "name": "Baz",
+                        "price": "thirty five point four",
+                    },
+                },
+            },
+        ),
+    ],
+):
+    results = {"item_id": item_id, "item": item}
+    return results
+
+@app.put("/data_types_things/{item_id}")
+async def read_data_types_thing(
+    item_id: UUID,
+    start_datetime: Annotated[datetime, Body()],
+    end_datetime: Annotated[datetime, Body()],
+    process_after: Annotated[timedelta, Body()],
+    repeat_at: Annotated[time | None, Body()] = None,
+):
+    start_process = start_datetime + process_after
+    duration = end_datetime - start_process
+    return {
+        "item_id": item_id,
+        "start_datetime": start_datetime,
+        "end_datetime": end_datetime,
+        "process_after": process_after,
+        "repeat_at": repeat_at,
+        "start_process": start_process,
+        "duration": duration,
+    }
