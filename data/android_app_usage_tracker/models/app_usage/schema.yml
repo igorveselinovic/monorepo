@@ -1,0 +1,38 @@
+
+version: 2
+
+models:
+  - name: mart_usage_events
+    description: "Mart table for Android app usage events"
+    columns:
+      - name: usage_event_id
+        description: "The natural primary key from the raw data source"
+        data_type: integer
+        data_tests:
+          - unique
+          - not_null
+      - name: usage_event_starttime
+        description: "The start time of the app usage event (i.e, when the app was opened)"
+        data_type: integer
+        data_tests:
+          - not_null
+      - name: usage_event_endtime
+        description: "The end time of the app usage event (i.e, when the app was closed)"
+        data_type: integer
+        data_tests:
+          - not_null
+      - name: app_name
+        description: "The name of the app that was being used"
+        data_type: text
+        data_tests:
+          - not_null
+      - name: app_package_name
+        description: "The package name of the app that was being used"
+        data_type: text
+        data_tests:
+          - not_null
+      - name: app_class_name
+        description: "The name of the class withing the app that was being used"
+        data_type: text
+        data_tests:
+          - not_null

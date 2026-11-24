@@ -1,0 +1,17 @@
+sources:
+  - name: activity_watch
+    database: database  
+    schema: raw 
+    tables:
+      - name: events
+        columns:
+          - name: id
+            description: "The natural primary key"
+          - name: bucketrow
+            description: "Natural foreign key of the bucket where this event is stored"
+          - name: starttime
+            description: "The start time of the app usage event (i.e, when the app was opened)"
+          - name: endtime
+            description: "The end time of the app usage event (i.e, when the app was closed)"
+          - name: data
+            description: "JSON data about the app that was being used"
