@@ -4,6 +4,7 @@ sources:
     schema: raw 
     tables:
       - name: events
+        description: "ActivityWatch table for the tracked Android app usage events"
         columns:
           - name: id
             description: "The natural primary key"
@@ -15,3 +16,19 @@ sources:
             description: "The end time of the app usage event (i.e, when the app was closed)"
           - name: data
             description: "JSON data about the app that was being used"
+
+      - name: buckets
+        description: "ActivityWatch table for the different storage buckets used for different event types"
+        columns:
+          - name: id
+            description: "The natural primary key"
+          - name: name
+            description: "The name of the storage bucket"
+          - name: type
+            description: "The event type stored in this bucket"
+          - name: client
+          - name: hostname
+          - name: created
+            description: "The string formatted UTC timestamp when this bucket was created"
+          - name: data_deprecated
+          - name: data
