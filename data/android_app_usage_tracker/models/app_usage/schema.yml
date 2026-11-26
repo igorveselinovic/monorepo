@@ -11,14 +11,59 @@ models:
         data_tests:
           - unique
           - not_null
+      - name: usage_event_start_unix_timestamp
+        description: "The start time of the app usage event (i.e, when the app was opened) in Unix time (nanoseconds)"
+        data_type: integer
+        data_tests:
+          - not_null
       - name: usage_event_start_timestamp
-        description: "The start time of the app usage event (i.e, when the app was opened)"
+        description: "The start time of the app usage event (i.e, when the app was opened) in ISO-8601 format"
+        data_type: text
+        data_tests:
+          - not_null
+      - name: usage_event_start_timestamp_local
+        description: "The start time of the app usage event (i.e, when the app was opened) in ISO-8601 format in the local timezone"
+        data_type: text
+        data_tests:
+          - not_null
+      - name: usage_event_end_unix_timestamp
+        description: "The end time of the app usage event (i.e, when the app was closed) in Unix time (nanoseconds)"
         data_type: integer
         data_tests:
           - not_null
       - name: usage_event_end_timestamp
-        description: "The end time of the app usage event (i.e, when the app was closed)"
+        description: "The end time of the app usage event (i.e, when the app was closed) in ISO-8601 format"
+        data_type: text
+        data_tests:
+          - not_null
+      - name: usage_event_end_timestamp_local
+        description: "The end time of the app usage event (i.e, when the app was closed) in ISO-8601 format in the local timezone"
+        data_type: text
+        data_tests:
+          - not_null
+      - name: usage_event_duration_nanoseconds
+        description: "The duration (in nanoseconds) of the app usage event (i.e, how long the app was open for)"
         data_type: integer
+        data_tests:
+          - not_null
+      - name: usage_event_duration_milliseconds
+        description: "The duration (in milliseconds) of the app usage event (i.e, how long the app was open for)"
+        data_type: integer
+        data_tests:
+          - not_null
+      - name: usage_event_duration_seconds
+        description: "The duration (in seconds) of the app usage event (i.e, how long the app was open for)"
+        data_type: real
+        data_tests:
+          - not_null
+      - name: usage_event_duration_minutes
+        description: "The duration (in minutes) of the app usage event (i.e, how long the app was open for)"
+        data_type: real
+        data_tests:
+          - not_null
+      - name: usage_event_duration_hours
+        description: "The duration (in hours) of the app usage event (i.e, how long the app was open for)"
+        data_type: real
         data_tests:
           - not_null
       - name: app_name
@@ -45,8 +90,18 @@ models:
         data_type: integer
         data_tests:
           - unique
-      - name: unlock_event_timestamp
-        description: "The time of the app unlock event (i.e, when the device was unlocked)"
+      - name: unlock_event_unix_timestamp
+        description: "The time of the app unlock event (i.e, when the device was unlocked) in Unix time (nanoseconds)"
         data_type: integer
+        data_tests:
+          - not_null
+      - name: unlock_event_timestamp
+        description: "The time of the app unlock event (i.e, when the device was unlocked) in ISO-8601 format"
+        data_type: text
+        data_tests:
+          - not_null
+      - name: unlock_event_timestamp_local
+        description: "The time of the app unlock event (i.e, when the device was unlocked) in ISO-8601 format in the local timezone"
+        data_type: text
         data_tests:
           - not_null
